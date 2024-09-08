@@ -56,6 +56,12 @@ app.post('/api/auth/login', (req, res) => {
   }
 });
 
+// Endpoint para recuperação dos dados do usuário logado
+app.get('/api/me', authenticateToken, (req, res) => {
+  const userData = getUserById(req.user.usuario_id);
+  res.status(200).json({ data: userData });
+});
+
 // Endpoint para recuperação dos dados de todos os usuários cadastrados
 app.get('/api/users', authenticateToken, authorizeAdmin, (req, res) => {
   res.status(200).json({ data: users });
@@ -105,6 +111,11 @@ function getPerfil(userId) {
       return item;
   });
   return userData.perfil;
+}
+
+// Recupera os dados do usuário através do id
+function getUserById(userId) {
+  return users.find(item => parseInt(userId) === parseInt(item.id));
 }
 
 // Classe fake emulando um script externo, responsável pela execução de queries no banco de dados

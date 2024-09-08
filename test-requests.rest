@@ -21,6 +21,10 @@ Content-Type: application/json
 ### Resposta
 @token = {{login.response.body.sessionid}}
 
+### Get Me
+GET http://localhost:3000/api/me
+Authorization: Bearer {{token}}
+
 ### Get Users
 GET http://localhost:3000/api/users
 Authorization: Bearer {{token}}
