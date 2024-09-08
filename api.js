@@ -15,6 +15,20 @@ app.listen(port, () => {
 // Chave secreta para assinar os tokens JWT
 const secretKey = 'P@%+~~=0[2YW59l@M+5ctb-;|Y4{z;1om1CuyN#n0t)pm0/yEC0"dn`wvg92D7A';
 
+// Middleware para verificar o token JWT
+function authenticateToken(req, res, next) {
+  const authHeader = req.headers['authorization'];
+  const token = authHeader && authHeader.split(' ')[1];
+
+  if (token == null) return res.status(401).json({ message: 'Token not provided' });
+
+  jwt.verify(token, secretKey, (err, user) => {
+    if (err) return res.status(403).json({ message: 'Invalid token' });
+    req.user = user;
+    next();
+  });
+}
+
 // Endpoint para login do usuário
 // Dados do body da requisição: {"username" : "user", "password" : "123456"}
 // Verifique mais abaixo, no array users, os dados dos usuários existentes na app
@@ -34,38 +48,26 @@ app.post('/api/auth/login', (req, res) => {
 });
 
 // Endpoint para recuperação dos dados de todos os usuários cadastrados
-app.get('/api/users/:sessionid', (req, res) => {
-  const sessionid = req.params.sessionid;
-  try {
-    const decoded = jwt.verify(sessionid, secretKey);
-    const perfil = getPerfil(decoded.usuario_id);
+app.get('/api/users', authenticateToken, (req, res) => {
+  const perfil = getPerfil(req.user.usuario_id);
 
-    if (perfil !== 'admin') {
-      res.status(403).json({ message: 'Forbidden' });
-    } else {
-      res.status(200).json({ data: users });
-    }
-  } catch (error) {
-    res.status(401).json({ message: 'Invalid session id' });
+  if (perfil !== 'admin') {
+    res.status(403).json({ message: 'Forbidden' });
+  } else {
+    res.status(200).json({ data: users });
   }
 });
 
 // Endpoint para recuperação dos contratos existentes
-app.get('/api/contracts/:empresa/:inicio/:sessionid', (req, res) => {
+app.get('/api/contracts/:empresa/:inicio', authenticateToken, (req, res) => {
   const empresa = req.params.empresa;
   const dtInicio = req.params.inicio;
-  const sessionid = req.params.sessionid;
 
-  try {
-    const decoded = jwt.verify(sessionid, secretKey);
-    const result = getContracts(empresa, dtInicio);
-    if (result) {
-      res.status(200).json({ data: result });
-    } else {
-      res.status(404).json({ data: 'Dados Não encontrados' });
-    }
-  } catch (error) {
-    res.status(401).json({ message: 'Invalid session id' });
+  const result = getContracts(empresa, dtInicio);
+  if (result) {
+    res.status(200).json({ data: result });
+  } else {
+    res.status(404).json({ data: 'Dados Não encontrados' });
   }
 });
 

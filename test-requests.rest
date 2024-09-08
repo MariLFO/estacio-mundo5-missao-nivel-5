@@ -8,22 +8,13 @@ Content-Type: application/json
   "password": "123456789"
 }
 
-
-#### Resposta
-@sessionid = {{login.response.body.sessionid}}
-
-###
-
-### Decrypt Session ID
-POST http://localhost:3000/api/auth/decrypt/{{sessionid}}
-Content-Type: application/json
-
-###
+### Resposta
+@token = {{login.response.body.sessionid}}
 
 ### Get Users
-GET http://localhost:3000/api/users/{{sessionid}}
-
-###
+GET http://localhost:3000/api/users
+Authorization: Bearer {{token}}
 
 ### Get Contracts
-GET http://localhost:3000/api/contracts/empresa1/2023-01-01/{{sessionid}}
+GET http://localhost:3000/api/contracts/empresa1/2023-01-01
+Authorization: Bearer {{token}}
