@@ -43,7 +43,6 @@ function authorizeAdmin(req, res, next) {
 }
 
 // Endpoint para login do usuário
-// Dados do body da requisição: {"username" : "user", "password" : "123456"}
 app.post('/api/auth/login', (req, res) => {
   const credentials = req.body;
 
@@ -80,11 +79,10 @@ app.get('/api/users', authenticateToken, authorizeAdmin, (req, res) => {
 
 // Endpoint para recuperação dos contratos existentes
 app.get('/api/contracts/:empresa/:inicio', authenticateToken, authorizeAdmin, async (req, res) => {
-  const empresa = req.params.empresa;
-  const dtInicio = req.params.inicio;
+  const { empresa, inicio } = req.params;
 
   try {
-    const result = await getContracts(empresa, dtInicio);
+    const result = await getContracts(empresa, inicio);
     if (result.length > 0) {
       res.status(200).json({ data: result });
     } else {
@@ -123,86 +121,58 @@ db.serialize(() => {
   db.run(`INSERT INTO users (username, password, email, perfil) VALUES ('colab', '123', 'colab@dominio.com', 'user')`);
 });
 
-// Recupera, no banco de dados, os dados dos contratos
-function getContracts(empresa, inicio) {
+// Função genérica para executar consultas SQL
+function executeQuery(query, params = []) {
   return new Promise((resolve, reject) => {
-    db.all(
-      'SELECT * FROM contracts WHERE empresa = ? AND data_inicio = ?',
-      [empresa, inicio],
-      (err, rows) => {
-        if (err) {
-          reject(err);
-        } else {
-          resolve(rows);
-        }
+    db.get(query, params, (err, row) => {
+      if (err) {
+        reject(err);
+      } else {
+        resolve(row);
       }
-    );
+    });
+  });
+}
+
+// Função genérica para executar consultas SQL que retornam múltiplas linhas
+function executeQueryAll(query, params = []) {
+  return new Promise((resolve, reject) => {
+    db.all(query, params, (err, rows) => {
+      if (err) {
+        reject(err);
+      } else {
+        resolve(rows);
+      }
+    });
   });
 }
 
 // Recupera os dados do usuário através do id
 function getUserById(userId) {
-  return new Promise((resolve, reject) => {
-    db.get(
-      'SELECT * FROM users WHERE id = ?',
-      [userId],
-      (err, row) => {
-        if (err) {
-          reject(err);
-        } else {
-          resolve(row);
-        }
-      }
-    );
-  });
+  // Consulta parametrizada previne SQL Injection
+  return executeQuery('SELECT * FROM users WHERE id = ?', [userId]);
 }
 
 // Recupera todos os usuários
 function getAllUsers() {
-  return new Promise((resolve, reject) => {
-    db.all(
-      'SELECT * FROM users',
-      (err, rows) => {
-        if (err) {
-          reject(err);
-        } else {
-          resolve(rows);
-        }
-      }
-    );
-  });
+  // Consulta parametrizada previne SQL Injection
+  return executeQueryAll('SELECT * FROM users');
 }
 
 // Realiza o login do usuário
 function doLogin(credentials) {
-  return new Promise((resolve, reject) => {
-    db.get(
-      'SELECT * FROM users WHERE username = ? AND password = ?',
-      [credentials.username, credentials.password],
-      (err, row) => {
-        if (err) {
-          reject(err);
-        } else {
-          resolve(row);
-        }
-      }
-    );
-  });
+  // Consulta parametrizada previne SQL Injection
+  return executeQuery('SELECT * FROM users WHERE username = ? AND password = ?', [credentials.username, credentials.password]);
 }
 
 // Recupera o perfil do usuário através do id
 function getPerfil(userId) {
-  return new Promise((resolve, reject) => {
-    db.get(
-      'SELECT perfil FROM users WHERE id = ?',
-      [userId],
-      (err, row) => {
-        if (err) {
-          reject(err);
-        } else {
-          resolve(row.perfil);
-        }
-      }
-    );
-  });
+  // Consulta parametrizada previne SQL Injection
+  return executeQuery('SELECT perfil FROM users WHERE id = ?', [userId]).then(row => row.perfil);
+}
+
+// Recupera, no banco de dados, os dados dos contratos
+function getContracts(empresa, inicio) {
+  // Consulta parametrizada previne SQL Injection
+  return executeQueryAll('SELECT * FROM contracts WHERE empresa = ? AND data_inicio = ?', [empresa, inicio]);
 }
