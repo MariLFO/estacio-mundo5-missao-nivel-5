@@ -122,7 +122,7 @@ function executeQueryAll(query, params = []) {
 // Recupera os dados do usuário através do id
 function getUserById(userId) {
   // Consulta parametrizada previne SQL Injection
-  return executeQuery('SELECT * FROM users WHERE id = ?', [userId]);
+  return executeQuery('SELECT id, username, email, perfil FROM users WHERE id = ?', [userId]);
 }
 
 // Recupera todos os usuários
