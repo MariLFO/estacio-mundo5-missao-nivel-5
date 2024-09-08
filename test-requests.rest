@@ -1,0 +1,29 @@
+### Login
+# @name login
+POST http://localhost:3000/api/auth/login
+Content-Type: application/json
+
+{
+  "username": "admin",
+  "password": "123456789"
+}
+
+
+#### Resposta
+@sessionid = {{login.response.body.sessionid}}
+
+###
+
+### Decrypt Session ID
+POST http://localhost:3000/api/auth/decrypt/{{sessionid}}
+Content-Type: application/json
+
+###
+
+### Get Users
+GET http://localhost:3000/api/users/{{sessionid}}
+
+###
+
+### Get Contracts
+GET http://localhost:3000/api/contracts/empresa1/2023-01-01/{{sessionid}}
