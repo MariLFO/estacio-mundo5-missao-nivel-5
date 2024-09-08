@@ -29,6 +29,10 @@ Authorization: Bearer {{token}}
 GET http://localhost:3000/api/users
 Authorization: Bearer {{token}}
 
-### Get Contracts
+### Get Contracts Empresa 1
 GET http://localhost:3000/api/contracts/empresa1/2023-01-01
+Authorization: Bearer {{token}}
+
+### Get Contracts Empresa 2
+GET http://localhost:3000/api/contracts/empresa2/2023-02-01
 Authorization: Bearer {{token}}

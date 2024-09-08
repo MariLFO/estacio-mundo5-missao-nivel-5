@@ -1,6 +1,7 @@
 const express = require('express');
 const bodyParser = require('body-parser');
 const jwt = require('jsonwebtoken');
+const sqlite3 = require('sqlite3').verbose();
 
 const app = express();
 
@@ -68,15 +69,19 @@ app.get('/api/users', authenticateToken, authorizeAdmin, (req, res) => {
 });
 
 // Endpoint para recuperação dos contratos existentes
-app.get('/api/contracts/:empresa/:inicio', authenticateToken, authorizeAdmin, (req, res) => {
+app.get('/api/contracts/:empresa/:inicio', authenticateToken, authorizeAdmin, async (req, res) => {
   const empresa = req.params.empresa;
   const dtInicio = req.params.inicio;
 
-  const result = getContracts(empresa, dtInicio);
-  if (result) {
-    res.status(200).json({ data: result });
-  } else {
-    res.status(404).json({ data: 'Dados Não encontrados' });
+  try {
+    const result = await getContracts(empresa, dtInicio);
+    if (result.length > 0) {
+      res.status(200).json({ data: result });
+    } else {
+      res.status(404).json({ data: 'Dados Não encontrados' });
+    }
+  } catch (error) {
+    res.status(500).json({ message: 'Internal Server Error' });
   }
 });
 
@@ -118,20 +123,36 @@ function getUserById(userId) {
   return users.find(item => parseInt(userId) === parseInt(item.id));
 }
 
-// Classe fake emulando um script externo, responsável pela execução de queries no banco de dados
-class Repository {
-  execute(query) {
-    return [];
-  }
-}
+// Configuração do banco de dados
+const db = new sqlite3.Database(':memory:');
+
+// Criação da tabela de contratos
+db.serialize(() => {
+  db.run(`CREATE TABLE contracts (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    empresa TEXT,
+    data_inicio TEXT
+  )`);
+
+  // Inserção de dados de exemplo
+  db.run(`INSERT INTO contracts (empresa, data_inicio) VALUES ('empresa1', '2023-01-01')`);
+  db.run(`INSERT INTO contracts (empresa, data_inicio) VALUES ('empresa2', '2023-02-01')`);
+});
 
 // Recupera, no banco de dados, os dados dos contratos
-// Metodo não funcional, servindo apenas para fins de estudo
 function getContracts(empresa, inicio) {
-  const repository = new Repository();
-  const query = `Select * from contracts Where empresa = '${empresa}' And data_inicio = '${inicio}'`;
-
-  const result = repository.execute(query);
-
-  return result;
+  return new Promise((resolve, reject) => {
+    db.all(
+      // Consultas parametrizadas para evitar SQL Injection
+      'SELECT * FROM contracts WHERE empresa = ? AND data_inicio = ?',
+      [empresa, inicio],
+      (err, rows) => {
+        if (err) {
+          reject(err);
+        } else {
+          resolve(rows);
+        }
+      }
+    );
+  });
 }
