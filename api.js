@@ -29,6 +29,15 @@ function authenticateToken(req, res, next) {
   });
 }
 
+// Middleware para verificar o perfil do usuário
+function authorizeAdmin(req, res, next) {
+  const perfil = getPerfil(req.user.usuario_id);
+  if (perfil !== 'admin') {
+    return res.status(403).json({ message: 'Forbidden: Admins only' });
+  }
+  next();
+}
+
 // Endpoint para login do usuário
 // Dados do body da requisição: {"username" : "user", "password" : "123456"}
 // Verifique mais abaixo, no array users, os dados dos usuários existentes na app
@@ -48,18 +57,12 @@ app.post('/api/auth/login', (req, res) => {
 });
 
 // Endpoint para recuperação dos dados de todos os usuários cadastrados
-app.get('/api/users', authenticateToken, (req, res) => {
-  const perfil = getPerfil(req.user.usuario_id);
-
-  if (perfil !== 'admin') {
-    res.status(403).json({ message: 'Forbidden' });
-  } else {
-    res.status(200).json({ data: users });
-  }
+app.get('/api/users', authenticateToken, authorizeAdmin, (req, res) => {
+  res.status(200).json({ data: users });
 });
 
 // Endpoint para recuperação dos contratos existentes
-app.get('/api/contracts/:empresa/:inicio', authenticateToken, (req, res) => {
+app.get('/api/contracts/:empresa/:inicio', authenticateToken, authorizeAdmin, (req, res) => {
   const empresa = req.params.empresa;
   const dtInicio = req.params.inicio;
 
@@ -72,7 +75,6 @@ app.get('/api/contracts/:empresa/:inicio', authenticateToken, (req, res) => {
 });
 
 // Outros endpoints da API
-
 // ...
 
 ///////////////////////////////////////////////////////////////////////////////////
