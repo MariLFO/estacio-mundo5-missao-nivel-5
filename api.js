@@ -1,7 +1,6 @@
 const express = require('express');
 const bodyParser = require('body-parser');
 const jwt = require('jsonwebtoken');
-const crypto = require('crypto');
 
 const app = express();
 
@@ -32,17 +31,6 @@ app.post('/api/auth/login', (req, res) => {
   } else {
     res.status(401).json({ message: 'Invalid credentials' });
   }
-});
-
-// Endpoint para demonstração do processo de quebra da criptografia da session-id gerada no login
-// Esse endpoint, e consequente processo, não deve estar presente em uma API oficial,
-// aparecendo aqui apenas para finalidade de estudos.
-app.post('/api/auth/decrypt/:sessionid', (req, res) => {
-  const sessionid = req.params.sessionid;
-  //const decryptedSessionid = decryptData(sessionid);
-  const decryptedSessionid = decrypt(sessionid);
-  
-  res.json({ decryptedSessionid: decryptedSessionid })
 });
 
 // Endpoint para recuperação dos dados de todos os usuários cadastrados
@@ -105,15 +93,6 @@ function doLogin(credentials) {
   });
   return userData;
 }
-
-// Função de exemplo para demonstrar como é possível realizar a quebra da chave gerada (e usada como session id),
-//   tendo acesso ao algoritmo e à palavra-chave usadas na encriptação.
-function decrypt(encryptedText) {
-  const decipher = crypto.createDecipher('aes-256-cbc', secretKey);
-  let decrypted = decipher.update(encryptedText, 'hex', 'utf8');
-  decrypted += decipher.final('utf8');
-  return decrypted;
-};
 
 // Recupera o perfil do usuário através do id
 function getPerfil(userId) {
